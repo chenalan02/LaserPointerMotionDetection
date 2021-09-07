@@ -61,7 +61,6 @@ class BackgroundSubtractor:
                     self.laser_coordinates = (y + h//2, x + w//2)
 
             self.send_laser_coordinates()
-            self.receive_data()
 
         cv2.imshow("processed", mask)
         cv2.imshow("Webcam", unprocessed_frame)
