@@ -20,10 +20,16 @@ class Turret{
     int joystickYAngle = 90;
 
     bool calibrated = false;
+    int imgHeight = 480;
+    int imgWidth = 640;
 
     int boundingAnglesFound = 0;
     //[left, right, top, bottom]
     int boundingAngles[4];
+
+    char cmd_in[32];
+    int coordinate_X;
+    int coordinate_Y;
 
     Turret(){
       servoX.attach(servoXPin);
@@ -40,13 +46,13 @@ class Turret{
       joystickYValue = analogRead(joystickYPin);
       
       if (joystickXValue > 900)
-        joystickXAngle += 2;
+        joystickXAngle++;
       else if (joystickXValue < 200)
-        joystickXAngle -= 2;
+        joystickXAngle--;
       if (joystickYValue > 900)
-        joystickYAngle += 2;
+        joystickYAngle++;
       else if (joystickYValue < 200)
-        joystickYAngle -= 2;
+        joystickYAngle--;
 
       if (joystickYAngle > 180)
         joystickYAngle = 180;
@@ -61,19 +67,87 @@ class Turret{
       servoY.write(joystickYAngle);
     }
 
+    void recieve_cmd(){
+      static boolean recvInProgress = false;
+      static byte idx = 0;
+      char startMarkerX = 'x';
+      char startMarkerY = 'y';
+      char endMarker = '>';
+      char char_in;
+      bool cmd_is_x;
+    
+      while(Serial.available() > 0)
+      {
+        char_in = Serial.read();
+
+        if (recvInProgress){
+          if (char_in != endMarker){
+            cmd_in[idx] = char_in;
+            idx++;
+            if (idx >= 32) {
+              idx = 31;
+              }
+          }
+          else{
+            cmd_in[idx] = '\0';
+            recvInProgress = false;
+            idx = 0;
+            if (cmd_is_x){
+              coordinate_X = atoi(cmd_in);
+              coordinate_move(true);
+            }
+            else{
+              coordinate_Y = atoi(cmd_in);
+              coordinate_move(false);
+            }
+              
+          }
+        }
+        
+        else if (char_in == startMarkerX){
+          recvInProgress = true;
+          cmd_is_x = true;
+        }
+
+        else if(char_in == startMarkerY){
+          recvInProgress = true;
+          cmd_is_x = false;
+        }
+        }
+      
+      }    
+    
+    void coordinate_move(bool move_x){
+      if (move_x)
+      {
+        int x_angle = map(coordinate_X, 0, imgWidth, boundingAngles[0], boundingAngles[1]);
+        servoX.write(x_angle);
+      }
+      else
+      {
+        int y_angle = map(coordinate_Y, 0, imgHeight, boundingAngles[2], boundingAngles[3]);
+        servoY.write(y_angle);
+      }
+    }
+    
+
     void calibrate_boundaries(){
       if (analogRead(joystickClickPin) < 10)
       {
-        if (boundingAnglesFound < 3){
-          boundingAngles[boundingAnglesFound] = joystickXValue;
+        if (boundingAnglesFound < 2){
+          boundingAngles[boundingAnglesFound] = joystickXAngle;
           boundingAnglesFound++;
         }
         else
         {
-          boundingAngles[boundingAnglesFound] = joystickYValue;
+          boundingAngles[boundingAnglesFound] = joystickYAngle;
           boundingAnglesFound++;
           if (boundingAnglesFound > 3)
             calibrated = true;
+            Serial.print(1);
+            //while (!Serial.available()){}
+            //imgHeight = Serial.read();
+            //imgWidth = Serial.read();
         }
         flash_laser();
       }
@@ -108,9 +182,12 @@ void loop() {
   turret->joystick_move();
   if (turret->calibrated == false)
     turret->calibrate_boundaries();
-  //if(Serial.available()){
-  //      input = Serial.read();
-  // }
+  else
+  {
+    turret->recieve_cmd();
+  }
+    
 
-  delay(100);
+   
+  delay(50);
 }
