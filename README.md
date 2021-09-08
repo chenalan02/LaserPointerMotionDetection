@@ -102,7 +102,7 @@ To reduce noise, a buffer for the previous 5 background frames were used. Instea
 
 `void coordinate_move(bool move_x)`
 * maps coordinates to the bounding angles to find angles needed to point laser at coordinate
-* `bool move_x` - indicates whether the move the x or y servo\
+* `bool move_x` - indicates whether to move the x or y servo
 
 `void calibrate_boundaries()`
 * check if the joystick button has been clicked or not to set border/boundary angle in `int boundingAngles[4]`
