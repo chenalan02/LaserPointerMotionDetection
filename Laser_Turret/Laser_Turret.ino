@@ -1,5 +1,6 @@
 #include <Servo.h>
 
+//pin values
 const int laserPin = 7;
 const int joystickXPin = A0;
 const int joystickYPin = A1;
@@ -7,30 +8,47 @@ const int joystickClickPin = A2;
 const int servoXPin = 9;
 const int servoYPin = 10;
 
+
+//laser turret object
 class Turret{
   public:
     Servo servoX;
     Servo servoY;
-    
+
+    //analog read values for joystick
     int joystickXValue;
     int joystickYValue;
     int joystickClickValue;
 
+    //angle to set the servos to
     int joystickXAngle = 90;
     int joystickYAngle = 90;
 
+    //switch value for calibration
     bool calibrated = false;
+
+    //dimensions of frame
     int imgHeight = 480;
     int imgWidth = 640;
+    
+    /*
+    bounding angle refers to an angle a servo motor is set to 
+    when the laser is touching the edge of the frame
+    */
 
+    //number of bounding angles that have been found 
     int boundingAnglesFound = 0;
-    //[left, right, top, bottom]
+    
+    //stores bounding angles [left, right, top, bottom]
     int boundingAngles[4];
 
+    //stores the bytes sent by the python program to form a command
     char cmd_in[32];
+    //laser coordinates send from the python program
     int coordinate_X;
     int coordinate_Y;
 
+    //initialize pins
     Turret(){
       servoX.attach(servoXPin);
       servoY.attach(servoYPin);
@@ -40,11 +58,14 @@ class Turret{
       pinMode(joystickYPin, INPUT);
       pinMode(joystickClickPin, INPUT);
       }
-
+      
+    //method to move joystick when calibrating turret
     void joystick_move(){
+      //reads joystick values
       joystickXValue = analogRead(joystickXPin);
       joystickYValue = analogRead(joystickYPin);
-      
+
+      //if joystick is moved in any extreme, change the angle by one degree
       if (joystickXValue > 900)
         joystickXAngle++;
       else if (joystickXValue < 200)
@@ -67,6 +88,11 @@ class Turret{
       servoY.write(joystickYAngle);
     }
 
+    //method to recieve a command from the python program through serial communication
+    //iteratively collects bytes which represent digits in a number when the byte 'x' or 'y' is recieved
+    //'x' and 'y' denotes a command to change the x and y servo respectively
+    //'>' denotes the end of the command
+    //converts string to int and moves servo to that number 
     void recieve_cmd(){
       static boolean recvInProgress = false;
       static byte idx = 0;
@@ -116,7 +142,7 @@ class Turret{
         }
       
       }    
-    
+    //maps coordinates to the bounding angles to find angles needed to point laser at coordinate
     void coordinate_move(bool move_x){
       if (move_x)
       {
@@ -130,29 +156,30 @@ class Turret{
       }
     }
     
-
+    //check if the joystick button has been clicked or not to set border/boundary angle
     void calibrate_boundaries(){
+      //check if joystick button click
       if (analogRead(joystickClickPin) < 10)
       {
+        //setting the left and right bounding angles with respect to x servo
         if (boundingAnglesFound < 2){
           boundingAngles[boundingAnglesFound] = joystickXAngle;
           boundingAnglesFound++;
         }
-        else
-        {
+        //setting the top and bottom bounding angles with respect to y servo
+        else{
           boundingAngles[boundingAnglesFound] = joystickYAngle;
           boundingAnglesFound++;
+          //if all 4 bounding angles have been found, set turret to calibrated and communicate such to python program
           if (boundingAnglesFound > 3)
             calibrated = true;
             Serial.print(1);
-            //while (!Serial.available()){}
-            //imgHeight = Serial.read();
-            //imgWidth = Serial.read();
         }
+        //visible laser flash when bounding angle set
         flash_laser();
       }
     }
-
+    //laser flashes multiple times
     void flash_laser (){
       digitalWrite(laserPin, LOW);
       delay(100);
@@ -179,9 +206,11 @@ void setup() {
 }
 
 void loop() {
+  //use joystick move until turret is calibrated
   turret->joystick_move();
   if (turret->calibrated == false)
     turret->calibrate_boundaries();
+  //recieves coordinate commands for turret when calibrated
   else
   {
     turret->recieve_cmd();
