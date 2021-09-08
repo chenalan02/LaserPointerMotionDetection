@@ -13,6 +13,7 @@ The laser must first be calibrated when main.py is initialized. A joystick conne
 
 `int x_angle = map(coordinate_X, 0, imgWidth, boundingAngles[0], boundingAngles[1]);
         servoX.write(x_angle);`
+        
 Although this solution for aiming the turret is flawed, as it will be inaccurate near the corners of the frame, it is good enough for my purposes. I only need the turret to point and follow the central location of movement and it does not be to be extremely accurate. An accurate solution would involve calibrating/measuring the closest distance from the laser to the wall and the actual height and width of visible wall.
 
 ## Background Subtraction Algorithm
