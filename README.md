@@ -10,6 +10,7 @@ https://github.com/chenalan02/LaserPointerMotionDetection/blob/main/Readme%20Ima
 
 ## Calibration
 The laser must first be calibrated when main.py is initialized. A joystick connected to the arduino is used to move the laser slowly. The angles of the x and y servo which correspond to the borders of the camera frame are recorded by moving the laser and clicking the joystick when the laser is on the borders. This is done in the following order: left-> right-> top-> bottom. When the arduino receives coordinates to aim at(from the python program), it maps the x and y pixel value to a servo angle depending on the angles determined during calibration.
+
 `int x_angle = map(coordinate_X, 0, imgWidth, boundingAngles[0], boundingAngles[1]);
         servoX.write(x_angle);`
 
