@@ -13,6 +13,7 @@ The laser must first be calibrated when main.py is initialized. A joystick conne
 
 `int x_angle = map(coordinate_X, 0, imgWidth, boundingAngles[0], boundingAngles[1]);
         servoX.write(x_angle);`
+Although this solution for aiming the turret is flawed, as it will be inaccurate near the corners of the frame, it is good enough for my purposes. I only need the turret to point and follow the central location of movement and it does not be to be extremely accurate. An accurate solution would involve calibrating/measuring the closest distance from the laser to the wall and the actual height and width of visible wall.
 
 ## Background Subtraction Algorithm
 A backgorund subtraction algorithm was created using OpenCV to detect motion. The algorithm works on the principle that the difference from subtracting the pixel values of consecutive frames will show where movement occurs. Both frames are processed into greyscale with a threshold applied to it. A gaussian blur is also applied to reduce noise. The absolute difference of the pixel values are then taken instead of regular subtraction to prevent integer overflow since pixel values are represented by 8 bit integers(0-255). The result is a image where pixel values are white where motion occurs and black elsewhere. This can be seen in the tracking a hand gif in the description.
